@@ -1,0 +1,371 @@
+#include <iostream>
+#include <string>
+#include <cstdlib>
+#include<fstream>
+using namespace std;
+
+int total_no_of_rooms_occupied = 0;
+
+class Person {
+protected:
+	string name;
+	int phno;
+
+public:
+	virtual void details() {
+		cout << "\nEnter your full name with space: ";
+		cin.ignore();
+		getline(cin, name);
+		cout << "Enter phone number: ";
+		cin >> phno;
+
+	}
+
+	string getName() const { return name; }
+};
+
+class Verification {
+protected:
+	bool aadhaar;
+
+public:
+	void verify() {
+		cout << "Do you have an Aadhaar card? (1: Yes, 0: No): ";
+		cin >> aadhaar;
+	}
+
+	bool isIndian() const {
+		return aadhaar;
+	}
+};
+
+class Customer : public Person, public Verification {
+protected:
+	int customer_id, age;
+	char address[50];
+
+public:
+	void customerc() {
+		details();
+		cout << "Enter your age: ";
+		while (!(cin >> age) || age <= 0) {
+			cout << "Please enter a valid age: ";
+			cin.clear();
+			cin.ignore(1000, '\n'); // Ignore until the next newline
+		}
+		cin.ignore(); // Clear the newline character from the buffer
+		cout << "Enter your address: ";
+		cin.getline(address, sizeof(address));
+		customer_id = rand() % 100 + 1;
+
+		// Verify nationality
+		verify();
+	}
+
+	double calculateBill(int days) {
+		const int room_rate = 100; // Room rate per day
+		double total_bill = room_rate * days;
+		double discount = 0.0;
+
+		// Apply discount for Indian customers
+		if (isIndian()) {
+			discount = total_bill * 0.1; // 10% discount
+			total_bill -= discount;
+			cout << "Original Price: $" << room_rate * days << endl;
+			cout << "Discount applied: 10% ($" << discount << ")\n";
+		}
+
+		return total_bill;
+	}
+};
+
+class Staff : public Person {
+protected:
+	int staff_id;
+
+public:
+	void details() {
+		cout << "Enter Staff ID: ";
+		cin >> staff_id;
+	}
+
+	void calsalary(int role) {
+		int hrs, mon;
+		cout << "\nEnter the working hours: ";
+		cin >> hrs;
+		cout << "\nEnter the working days in a month: ";
+		cin >> mon;
+
+		switch (role) {
+		case 1:
+			if (hrs > 8)
+				cout << "\nSalary of Manager is: $" << (20 * hrs * mon) + (22 * (hrs - 8));
+			else
+				cout << "\nSalary of Manager is: $" << 20 * hrs * mon;
+			break;
+		case 2:
+			if (hrs > 8)
+				cout << "\nSalary of Receptionist is: $" << (15 * hrs * mon) + (17 * (hrs - 8));
+			else
+				cout << "\nSalary of Receptionist is: $" << (15 * hrs * mon);
+			break;
+		case 3:
+			if (hrs > 8)
+				cout << "\nSalary of Cleaner is: $" << (10 * hrs * mon) + (12 * (hrs - 8));
+			else
+				cout << "\nSalary of Cleaner is: $" << (10 * hrs * mon);
+			break;
+		case 4:
+			if (hrs > 8)
+				cout << "\nSalary of Security is: $" << (12 * hrs * mon) + (14 * (hrs - 8));
+			else
+				cout << "\nSalary of Security is: $" << (12 * hrs * mon);
+			break;
+		}
+	}
+
+	void assignwork() {
+		int ch;
+		cout << "\nEnter the role: \n1. Manager(20$ /hr) \n2. Receptionist(15$ /hr) \n3. Cleaner (10$ /hr)\n4. Security(12$ /hr)\n";
+		cin >> ch;
+		switch (ch) {
+		case 1: calsalary(ch); break;
+		case 2: calsalary(ch); break;
+		case 3: calsalary(ch); break;
+		case 4: calsalary(ch); break;
+		default: cout << "Invalid input\n"; break;
+		}
+	}
+};
+
+class Room {
+protected:
+	bool room_occupied[100] = { false };
+
+public:
+
+	int checkAvailability() {
+		for (int i = 0; i < 100; i++) {
+			if (!room_occupied[i]) {
+				cout << "Room " << (i + 1) << " is available." << endl;
+				return i + 1; // Room numbers are 1-100
+			}
+		}
+		cout << "No rooms available." << endl;
+		return -1;
+	}
+
+	int checkroomAvailability(int r) {
+		int num, flag1 = -1;
+		ifstream file("data.txt", ios::beg);
+		while (file >> num)
+		{
+			if (num == r)
+			{
+				return r + 1; // Room numbers are 1-100
+				flag1 = 1;
+			}
+		}
+
+		if (flag1 == -1)
+			return -1;
+	}
+
+	void checkin(int room_no) {
+		fstream file("data.txt",ios::app);
+		if (room_no > 0 && room_no <= 100 && room_occupied[room_no - 1] != true) {
+			room_occupied[room_no - 1] = true;
+			total_no_of_rooms_occupied++;
+			file << room_no << "\n";
+
+		}
+	}
+
+	void checkout(int room_no) {
+		int num;
+		if (room_no > 0 && room_no <= 100 && room_occupied[room_no - 1]) {
+			room_occupied[room_no - 1] = false;
+			total_no_of_rooms_occupied--;
+			
+		}
+	}
+};
+
+class Admin : public Room {
+public:
+	void manageHotel() {
+		int choice;
+		while (true) {
+			cout << "\n*** Admin Management Panel ***\n";
+			cout << "1. View Room Availability\n";
+			cout << "2. Check In a Customer\n";
+			cout << "3. Check Out a Customer\n";
+			cout << "4. Calculate Staff Salary\n";
+			cout << "5. Exit to Main Menu\n";
+			cout << "********************************\n";
+			cout << "Choose an option: ";
+			cin >> choice;
+
+			switch (choice) {
+			case 1:
+				viewRoomAvailability();
+				break;
+			case 2:
+				checkInCustomer();
+				break;
+			case 3:
+				checkOutCustomer();
+				break;
+			case 4:
+				calculateStaffSalary();
+				break;
+			case 5:
+				cout << "Exiting to Main Menu...\n";
+				return;
+			default:
+				cout << "Invalid option. Please try again.\n";
+			}
+		}
+	}
+
+private:
+	void viewRoomAvailability() {
+		int flag = 0;
+		cout << "\nAvailable Rooms:\n";
+		for (int i = 0; i < 100; i++) {
+			if (room_occupied[i] == true) {
+				cout << "Room " << (i + 1) << " is not available.\n";
+				flag = 1;
+			}
+		}
+		if (flag == 0)
+		{
+			cout << "ALL ROOMS AVAILABLE\n";
+		}
+	}
+
+	void checkInCustomer() {
+		fstream file("data.txt",ios::app);
+		int room_no = checkAvailability();
+		if (room_no != -1) {
+			Customer c;
+			c.customerc();
+			double totalBill = c.calculateBill(1); // Calculate bill for 1 day
+			cout << "The price for one day is $100.\n";
+			char stay;
+			cout << "Do you want to stay? (y/n): ";
+			cin >> stay;
+
+			if (stay == 'y' || stay == 'Y') {
+				int days;
+				cout << "How many days do you want to stay? ";
+				cin >> days;
+
+				double finalBill = c.calculateBill(days);
+				cout << "Your total bill for " << days << " day(s) is: $" << finalBill << endl;
+
+				// Check-in the customer
+				checkin(room_no);
+				cout << "Room " << room_no << " has been booked.\n";
+				file << room_no << endl;
+			}
+			else {
+				cout << "Thank you! Have a nice day!\n";
+			}
+		}
+	}
+
+	void checkOutCustomer() {
+		int room_no;
+		cout << "Enter room number to check out: ";
+		cin >> room_no;
+		
+		if (checkroomAvailability(room_no) >=0 )
+		{
+			checkout(room_no);
+			cout << "Room " << room_no << " is free now\n";
+		}
+		else {
+			cout << "Room was empty\n";
+		}
+	}
+
+	void calculateStaffSalary() {
+		Staff staff; // Create a Staff object to handle salary calculation
+		staff.assignwork(); // Prompt for role and calculate salary
+	}
+};
+
+int main() {
+	cout << "\n\t\t\t\t\t\t *********************";
+	cout << "\n\t\t\t\t\t\t ***THE MEGHA HOTEL***";
+	cout << "\n\t\t\t\t\t\t *********************";
+	cout << "\n\t\t\t\t\t\t  ** MAIN MENU **";
+	cout << "\n\t\t\t\t\t\t *********************\n";
+
+
+	int a;
+	Admin admin;
+
+	while (true) {
+		cout << "Are you a\n1) Customer \nor \n2) Admin?\n";
+		cin >> a;
+
+		if (a == 1) {
+			Customer c;
+			c.customerc(); // Get customer details
+			cout << "\nWelcome, " << c.getName() << "!\n";
+			double totalBill = c.calculateBill(1); // Calculate bill for 1 day
+			cout << "The price for one day is $100.\n";
+			char stay;
+			cout << "Do you want to stay? (y/n): ";
+			cin >> stay;
+
+			if (stay == 'y' || stay == 'Y') {
+				int days;
+				cout << "How many days do you want to stay? ";
+				cin >> days;
+
+				double finalBill = c.calculateBill(days);
+				cout << "Your total bill for " << days << " day(s) is: $" << finalBill << endl;
+
+				// Here you would normally proceed to check in
+				int room_no; 
+				while(1)                   // = admin.checkAvailability();
+				{
+				cout << "Enterr the room number: ";
+				cin >> room_no;
+				if (admin.checkroomAvailability(room_no) == -1) {
+					admin.checkin(room_no);
+					cout << "Room " << room_no << " has been booked.\n";
+					break;
+				}
+				else {
+					cout << "Room not available\n";
+				}
+				}
+			}
+			else {
+				cout << "Thank you! Have a nice day!\n";
+			}
+
+		}
+		else if (a == 2) {
+			string password;
+			cout << "Enter admin password: ";
+			cin >> password;
+
+			if (password == "1220") {
+				admin.manageHotel();
+			}
+			else {
+				cout << "Incorrect password. Access denied.\n";
+			}
+		}
+		else {
+			cout << "Invalid input.\n";
+		}
+	}
+
+	return 0;
+}
